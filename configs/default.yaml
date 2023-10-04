@@ -1,0 +1,45 @@
+# default config shared across train / export / bench
+
+audio:
+  sample_rate: 16000
+  window_ms: 25
+  hop_ms: 10
+  n_mels: 40
+  n_fft: 512
+  frame_ms: 30
+
+wake_word:
+  keyword: "hey_hello"
+  n_frames: 98         # ~1.0 s of audio at 10 ms hop
+  channels: [16, 32, 32]
+  fc: 64
+  n_classes: 12        # 10 targets + unknown + silence, Speech Commands v2
+
+speaker:
+  emb_dim: 128
+  channels: [32, 32, 32, 32, 96]
+  kernel_sizes: [5, 3, 3, 3, 1]
+  dilations: [1, 2, 3, 4, 1]
+  attention_channels: 32
+
+vad:
+  model: "silero_v4"
+  threshold: 0.5
+  min_speech_ms: 100
+  min_silence_ms: 200
+
+train:
+  batch_size: 128
+  lr: 0.001
+  epochs: 30
+  seed: 1337
+  num_workers: 4
+
+export:
+  opset: 15
+  fp16: true
+  int8: false
+
+bench:
+  n_warmup: 20
+  n_runs: 200

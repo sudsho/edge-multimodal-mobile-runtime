@@ -1,0 +1,14 @@
+torch==2.0.1
+torchaudio==2.0.2
+numpy==1.25.2
+librosa==0.10.1
+coremltools==7.0
+onnx==1.14.1
+onnxruntime==1.16.0
+tflite-support==0.4.4
+silero-vad==4.0
+pyannote-audio==3.0.1
+matplotlib==3.8.0
+tqdm==4.66.1
+pytest==7.4.2
+pyyaml==6.0.1
