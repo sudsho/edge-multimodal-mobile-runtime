@@ -96,8 +96,12 @@ class SpeechCommandsWW(Dataset):
 
     def _sample_silence(self) -> torch.Tensor:
         bg = random.choice(self.bg_cache)
-        start = random.randint(0, bg.shape[-1] - self.n_samples)
+        # guard against short bg files (silence.wav in v0.02 is only ~1s)
+        max_start = max(0, bg.shape[-1] - self.n_samples)
+        start = random.randint(0, max_start) if max_start > 0 else 0
         clip = bg[start:start + self.n_samples].clone()
+        if clip.shape[-1] < self.n_samples:
+            clip = torch.nn.functional.pad(clip, (0, self.n_samples - clip.shape[-1]))
         clip = clip * random.uniform(0.0, 0.1)
         return clip.unsqueeze(0)
 
