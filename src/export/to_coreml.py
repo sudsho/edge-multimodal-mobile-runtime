@@ -20,7 +20,7 @@ import torch
 import yaml
 
 import coremltools as ct
-from coremltools import ImageType, TensorType
+from coremltools import TensorType
 
 from src.audio.mel import MelFrontend
 from src.models.wake_word_cnn import WakeWordCNN

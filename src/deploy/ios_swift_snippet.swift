@@ -64,7 +64,10 @@ final class WakePipeline {
                 let input = try self.melToMLArray(self.melBuf)
                 let out = try self.wake.prediction(mel: input)
                 let (label, prob) = self.argmaxSoftmax(out.logits)
-                if label == "hey_hello" && prob > self.wakeThreshold {
+                // wakeLabel here is one of the 12 Speech Commands v2 classes
+                // the head was trained on. Swap it for whichever target word
+                // you re-train on for a real wake keyword.
+                if label == "stop" && prob > self.wakeThreshold {
                     self.verifySpeaker()
                 }
             } catch {

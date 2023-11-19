@@ -80,7 +80,10 @@ class WakePipeline(
         val out = wake.run(mapOf(wake.inputNames.first() to input))
         val logits = (out[0].value as Array<FloatArray>)[0]
         val (idx, prob) = softmaxArgmax(logits)
-        if (LABELS[idx] == "hey_hello" && prob > wakeThreshold) {
+        // LABELS below are the 12 Speech Commands v2 classes the head was
+        // trained on. Swap "stop" for whichever target word you re-train on
+        // for a real wake keyword.
+        if (LABELS[idx] == "stop" && prob > wakeThreshold) {
             runSpeaker(ring)
         }
         input.close(); out.close()

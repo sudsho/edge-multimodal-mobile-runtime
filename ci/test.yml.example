@@ -1,6 +1,3 @@
-# CI config, kept out of .github/workflows on purpose. Copy to
-# .github/workflows/test.yml when the workflow OAuth scope is available.
-
 name: test
 
 on:

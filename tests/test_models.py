@@ -28,6 +28,7 @@ def test_speaker_shapes():
 
 def test_speaker_variable_time():
     net = SpeakerECAPATiny(n_mels=40, channels=96, emb_dim=128)
+    net.eval()
     for T in (150, 200, 300):
         x = torch.randn(1, 1, T, 40)
         e = net(x)

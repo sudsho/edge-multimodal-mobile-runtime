@@ -28,7 +28,7 @@ class WakeWordCNN(nn.Module):
         super().__init__()
         c1, c2, c3 = channels
 
-        # depthwise + pointwise blocks keep params low and stay ANE friendly
+        # three plain conv + bn + relu blocks with 2x max-pool between
         self.conv1 = nn.Conv2d(1, c1, kernel_size=(3, 3), padding=1)
         self.bn1 = nn.BatchNorm2d(c1)
 

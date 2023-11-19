@@ -1,22 +1,21 @@
 # edge-multimodal-mobile-runtime
 
-Wake-word + speaker verification on phones. Sub-30 ms end-to-end on iPhone
-Neural Engine via CoreML, ONNX Runtime Mobile for Android (NNAPI), TFLite as
-a third path.
+Small wake-word and speaker-embedding models with export paths to CoreML,
+ONNX Runtime Mobile, and TFLite. This is a study repo, not a shipped
+runtime.
 
 ## the problem
 
-Phones and earbuds want to wake up on a keyword, then confirm it is
-actually the owner speaking, without a round-trip to a server. This repo
-trains two tiny models and exports them to the three runtimes people
-actually ship:
+Wake-word plus speaker-verify is a common on-device speech pattern. This
+repo trains two tiny PyTorch models and provides scaffolding to export
+them to the three runtimes typically used on phones:
 
-- CoreML for iOS / Apple Neural Engine
-- ONNX Runtime Mobile for Android (via NNAPI where available)
-- TFLite as a fallback for older hardware and cross-vendor DSPs
+- CoreML for iOS
+- ONNX Runtime Mobile for Android
+- TFLite as an alternative path
 
-Target budget: wake-word under 15 ms, speaker verify under 30 ms end to end,
-running on a modern phone SoC.
+Sample Swift and Kotlin snippets show the intended integration shape,
+but they are code sketches, not a working iOS or Android app.
 
 ## architecture
 
@@ -36,23 +35,25 @@ Full diagram in [docs/architecture.md](docs/architecture.md).
 
 ## models
 
-| Model | Params | fp16 size | Purpose |
-|---|---:|---:|---|
-| `WakeWordCNN` | 118K | 236 KB | 12-class keyword spotting on Speech Commands v2 |
-| `SpeakerECAPATiny` | 810K | 1.62 MB | 128-dim speaker embedding, cosine scored |
-| Silero VAD v4 | 1.8M | 2.1 MB | speech activity gate (pretrained, not fine-tuned) |
+Both nets are tiny by design. Actual parameter counts as instantiated
+with the shipped defaults:
 
-## latency table
+| Model | Params (approx.) | Purpose |
+|---|---:|---|
+| `WakeWordCNN` | ~17K | 12-class keyword spotting on Speech Commands v2 |
+| `SpeakerECAPATiny` | ~129K | 128-dim speaker embedding, cosine scored |
+| Silero VAD v4 | pretrained, upstream | speech activity gate |
 
-| Device | Wake p50 | Speaker p50 | End-to-end |
-|---|---:|---:|---:|
-| iPhone 14 Pro (A16 ANE) | 1.8 ms | 11.4 ms | 13.2 ms |
-| iPhone 11 (A13 ANE) | 3.1 ms | 18.7 ms | 21.8 ms |
-| Pixel 7 (Tensor G2 NNAPI) | 4.2 ms | 22.8 ms | 27.0 ms |
-| Samsung S22 (SD8G1 NNAPI) | 4.7 ms | 24.6 ms | 29.3 ms |
+Counts come from `sum(p.numel() for p in net.parameters())` on the
+default constructor args. Change `channels`, `emb_dim`, or `attn_channels`
+and the count moves.
 
-Full table with p90, precisions, and older SoCs in
-[benchmarks/results.md](benchmarks/results.md).
+## latency
+
+On-device latency is not measured in this repo. `src/bench/latency_probe.py`
+runs desktop-only timing over a torch, onnxruntime, or coreml session on
+random input and prints p50/p90. See [docs/latency_report.md](docs/latency_report.md)
+for what it does and does not cover.
 
 ## repo layout
 
@@ -65,15 +66,14 @@ src/
   vad/              silero_vad_wrap.py
   export/           to_coreml.py, to_onnx.py, to_tflite.py, quantize.py
   bench/            latency_probe.py (torch / onnxruntime / coreml backends)
-  deploy/           ios_swift_snippet.swift, android_kotlin_snippet.kt
-tests/              pytest suite, no network / device required
+  deploy/           ios_swift_snippet.swift, android_kotlin_snippet.kt (sketches)
+tests/              pytest suite for the model + export + vad wrapper
 docs/               architecture, coreml_notes, onnxrt_mobile_notes,
                     quantization, latency_report, privacy_and_on_device
-benchmarks/         on-device numbers + method
-notebooks/          analyze_latency.ipynb
-Dockerfile          training / export env, deploy is on-device
+benchmarks/         placeholder
+Dockerfile          training / export env
 Makefile            train / export / quantize / bench shortcuts
-ci/test.yml.example CI config, out of .github/workflows for now
+ci/test.yml.example CI config
 ```
 
 ## setup
@@ -119,18 +119,18 @@ Runtime notes:
 
 ## deploy
 
-- iOS: drop `models/wakeword.mlpackage` and `models/speaker.mlpackage` into
-  an Xcode 15 project. Use [src/deploy/ios_swift_snippet.swift](src/deploy/ios_swift_snippet.swift)
-  as a starting point.
-- Android: convert `.onnx` -> `.ort` with the ORT Mobile tool, drop into
-  `app/src/main/assets/`. Use [src/deploy/android_kotlin_snippet.kt](src/deploy/android_kotlin_snippet.kt).
+The Swift and Kotlin files under `src/deploy/` are integration sketches
+that show the shape of the wake plus verify pipeline. Several helper
+methods are stubs (`fatalError("impl")` in Swift, no-op ring buffer in
+Kotlin). There is no `.xcodeproj` or Android Studio project checked in.
 
 ## privacy
 
-Audio never leaves the device. VAD, mel front-end, wake CNN, and speaker
-embedding all run in the on-device runtime. Enrollment embeddings live in
-the platform keystore (iOS Keychain / Android EncryptedSharedPreferences).
-See [docs/privacy_and_on_device.md](docs/privacy_and_on_device.md).
+The intent of the pipeline is on-device inference: VAD, mel front-end,
+wake CNN, and speaker embedding all run locally with no network calls.
+See [docs/privacy_and_on_device.md](docs/privacy_and_on_device.md) for the
+data-flow diagram and the platform considerations that matter in a
+real integration.
 
 ## license
 
