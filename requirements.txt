@@ -1,10 +1,17 @@
-torch==2.0.1
-torchaudio==2.0.2
-numpy==1.25.2
-coremltools==7.0
-onnx==1.14.1
-onnxruntime==1.16.0
-silero-vad==4.0
-tqdm==4.66.1
-pytest==7.4.2
-pyyaml==6.0.1
+# core: training, ONNX export, and onnxruntime inference. this is the offline
+# verified path (see `python smoke.py`). versions are lower bounds; the smoke
+# was last run against torch 2.5.1, torchaudio 2.5.1, onnx 1.22, onnxruntime
+# 1.20 on CPU, python 3.11.
+torch>=2.0
+torchaudio>=2.0
+numpy>=1.24
+onnx>=1.14
+onnxruntime>=1.16
+tqdm>=4.66
+pyyaml>=6.0
+pytest>=7.4
+
+# optional export targets, not needed for the offline smoke:
+#   coremltools>=7.0   # CoreML export, macOS only
+#   silero-vad>=4.0    # real Silero VAD weights (tests mock this)
+#   tensorflow + onnx-tf  # TFLite export path

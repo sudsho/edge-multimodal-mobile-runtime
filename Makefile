@@ -1,4 +1,4 @@
-.PHONY: install test lint train-ww train-spk export-coreml export-onnx export-tflite quantize bench clean
+.PHONY: install test lint smoke train-ww train-ww-synthetic train-spk export-coreml export-onnx export-tflite quantize bench clean
 
 PY ?= python
 DATA_WW ?= data/speech_commands_v0.02
@@ -12,6 +12,12 @@ test:
 
 lint:
 	python -m compileall src tests
+
+smoke:
+	$(PY) smoke.py
+
+train-ww-synthetic:
+	$(PY) -m src.train.train_wakeword --synthetic --epochs 6 --out runs/wakeword
 
 train-ww:
 	$(PY) -m src.train.train_wakeword --data $(DATA_WW) --out runs/wakeword

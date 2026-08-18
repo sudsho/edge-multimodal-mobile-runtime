@@ -17,6 +17,70 @@ them to the three runtimes typically used on phones:
 Sample Swift and Kotlin snippets show the intended integration shape,
 but they are code sketches, not a working iOS or Android app.
 
+## quick start (runs offline, no keys)
+
+The default demo path needs no dataset, no download, and no cloud creds. It
+trains the tiny wake-word CNN on seeded synthetic mel-spectrograms, exports to
+ONNX, runs ONNX Runtime, checks that the runtime output matches torch, and
+prints a CPU latency number. Runs in well under a minute on a laptop CPU.
+
+```
+pip install -r requirements.txt
+python smoke.py
+```
+
+Real output from a CPU run (Windows, torch 2.5.1, onnxruntime 1.20.1):
+
+```
+== 1. train tiny wake-word on synthetic mels ==
+wake-word CNN params: 17.1K
+  epoch 0  val_acc 0.172  (chance 0.083)
+  epoch 1  val_acc 0.234  (chance 0.083)
+  epoch 2  val_acc 0.570  (chance 0.083)
+  epoch 3  val_acc 0.898  (chance 0.083)
+  epoch 4  val_acc 0.801  (chance 0.083)
+  epoch 5  val_acc 0.836  (chance 0.083)
+  -> trained, best val_acc 0.898 clears 2x chance 0.167
+== 2. export to ONNX ==
+  -> ...\wakeword.onnx  (67.9 KB)
+== 3. onnxruntime vs torch parity ==
+  -> max abs diff 4.77e-07 < tol 1e-04  OK
+== 4. CPU latency (1 thread, 200 runs) ==
+  torch  p50 1.873 ms  p90 1.981 ms
+  onnx   p50 0.329 ms  p90 0.374 ms
+== 5. optional exports ==
+CoreML: skipped, export needs macOS (this host is Windows)
+TFLite: skipped, optional path needs tensorflow + onnx_tf
+
+SMOKE OK: train -> onnx -> onnxruntime parity -> latency all passed.
+```
+
+Tests:
+
+```
+pytest -q
+# 11 passed
+```
+
+What is and is not verified here:
+
+- Verified on CPU: synthetic training climbs well above chance, ONNX export,
+  ONNX Runtime inference, torch-vs-ONNX parity within 1e-4, and a CPU latency
+  number. This is a functional proof of the train -> export -> run loop, not a
+  quality result.
+- The accuracy above is on synthetic separable data, not real keyword spotting.
+  A real number needs Speech Commands (see `make train-ww DATA_WW=...`).
+- CoreML export runs on macOS only and is skipped elsewhere with a message.
+  TFLite export is an optional path that needs tensorflow + onnx-tf.
+- On-device latency (ANE / NNAPI) is not measured here; `smoke.py` prints the
+  desktop CPU baseline only.
+
+Train the wake-word head on synthetic data on its own:
+
+```
+make train-ww-synthetic       # or: python -m src.train.train_wakeword --synthetic
+```
+
 ## architecture
 
 ```
